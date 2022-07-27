@@ -1,7 +1,17 @@
 # Anonymize ULog Data
+![Terminal](assets/Terminal.png)
 Ever wanted to remove sensitive information from your ULog such as GPS data or anonymize it? This is a solution for you!
 
 This repository contains a script that can modify your GPS location data inside ULog to an arbitrary point.
+
+## Showcase
+Here we have the raw data plotted using a [Plotjuggler](https://github.com/facontidavide/PlotJuggler):
+![Unanonymized_Plotjuggler_View](assets/Unanonymized_Plotjuggler_View.png)
+
+After applying anonymization, data plotted turns into this:
+![Anonymized_Plotjuggler_View](assets/Anonymized_Plotjuggler_View.png)
+
+So the relative latitude / longitude differences during operation are still visible, but the absolute location is shifted so that the original location is not traceable.
 
 ## What the script does
 ### GPS coordinate anonymization
@@ -22,7 +32,7 @@ It also adds a new [Information message](https://docs.px4.io/main/en/dev_log/ulo
 
 `"postprocessing.anonymized" : "1"`
 
-## How to use
+## How to use the script
 ### Clone the repository
 > **Note**, this repository relies on the submodule [`pyulog`](https://github.com/PX4/pyulog). So you must clone the repository with `--recursive` option to clone the submodules as well!
 
@@ -63,3 +73,8 @@ anonymize_gps_data.py: error: the following arguments are required: ulog_path
 The magnetometer data (e.g. `vehicle_magnetometer`) can give an information about an approximate location of the vehicle using the declination information.
 
 However, this information is not modified in the script yet.
+
+### Plotjuggler Layout
+The layout useful for viewing the lat / lon values in Plotjuggler is attached in the repository [here](assets/plotjuggler_LatLon_layout.xml).
+
+You can apply this layout by clicking "File" > "Load layout" in Plotjuggler.

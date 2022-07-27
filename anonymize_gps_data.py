@@ -147,6 +147,7 @@ def anonymize_ulog_gps(ulog_file : Path, output_dir : Path):
     print('Reading the ULog ...')
     ulog = ULog(str(ulog_file.absolute()))
 
+    ## Anonymize GPS lat/lon data
     anonymize_topic_gps(ulog, 'home_position')
 
     anonymize_topic_gps(ulog, 'vehicle_local_position', 'ref_lat', 'ref_lon')
@@ -158,6 +159,14 @@ def anonymize_ulog_gps(ulog_file : Path, output_dir : Path):
     # These two topics have lat / lon in integer form (1E-7 degrees).
     anonymize_topic_gps(ulog, 'vehicle_gps_position', integer_unit=True)
     anonymize_topic_gps(ulog, 'sensor_gps', integer_unit=True)
+
+    ## Add the Information message with the 'postprocessing.anonymized' flag
+    print('Adding anonymized information message ...')
+    ANONYMIZED_INFORMATION_KEY = 'postprocessing.anonymized'
+    ANONYMIZED_INFORMATION_VALUE = '1'
+    ANONYMIZED_INFORMATION_UNIT_TYPE = 'bool'
+    ulog._msg_info_dict[ANONYMIZED_INFORMATION_KEY] = ANONYMIZED_INFORMATION_VALUE
+    ulog._msg_info_dict_types[ANONYMIZED_INFORMATION_KEY] = ANONYMIZED_INFORMATION_UNIT_TYPE
 
     print('Writing anonymized ULog ...')
     output_file_name = ulog_file.name + '_anonymized' + ulog_file.suffix
