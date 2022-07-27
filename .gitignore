@@ -1,3 +1,5 @@
+# Ignore anonymized output ULog files
+*_anonymized.ulg
 
 # Ignore python virtual environment files
 venv/*
