@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
 
-from pyulog import ULog
+# Import pyulog under the 'pyulog' folder locally, which is a submodule
+from pyulog import pyulog as pyulog_local
+from pyulog_local import ULog
 
 '''
     Processes given ulog file and saves the new ulog in the output_dir specified

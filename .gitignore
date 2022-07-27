@@ -1,0 +1,3 @@
+
+# Ignore python virtual environment files
+venv/*
