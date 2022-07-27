@@ -1,16 +1,28 @@
 import argparse
 from pathlib import Path
 
-# Import pyulog under the 'pyulog' folder locally, which is a submodule
-from pyulog import pyulog as pyulog_local
-from pyulog_local import ULog
+from pyulog import ULog
 
 '''
-    Processes given ulog file and saves the new ulog in the output_dir specified
-    Output file name will be : "<ulog-file-name>_anonymized.ulg"
+Processes given ulog file and saves the new ulog in the output_dir specified
+Output file name will be : "<ulog-file-name>_anonymized.ulg"
 '''
+# GPS coordinates will be shifted so that initial arming point (home-position)
+# will equal to this latitude / longitude point
+GPS_ANONYMIZE_LAT = 0
+GPS_ANONYMIZE_LON = 0
+
 def anonymize_gps_data(ulog_file : Path, output_dir : Path):
-    ulog = ULog(ulog_file.absolute())
+    # absolute() returns PosixPath() object for example, which isn't processable by pyulog. Change it to string object.
+    ulog = ULog(str(ulog_file.absolute()))
+
+    # 'home_position'
+    # 'vehicle_local_position'
+    # 'estimator_local_position'
+    # 'estimator_global_position'
+    # 'vehicle_global_position'
+    # 'vehicle_gps_position'
+    # 'sensor_gps'
     print(ulog)
 
 if __name__ == "__main__":
