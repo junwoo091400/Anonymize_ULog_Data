@@ -11,7 +11,9 @@ Here we have the raw data plotted using a [Plotjuggler](https://github.com/facon
 After applying anonymization, data plotted turns into this:
 ![Anonymized_Plotjuggler_View](assets/Anonymized_Plotjuggler_View.png)
 
-So the relative latitude / longitude differences during operation are still visible, but the absolute location is shifted so that the original location is not traceable.
+It may be hard to notice, but notice how the vertical scale has changed (absolute value of the global position). Now the vehicle starts from (0, 0) in this given example screenshot.
+
+The relative latitude / longitude differences during operation are still visible, but the absolute location is shifted so that the original location is not traceable.
 
 ## What the script does
 ### GPS coordinate anonymization
@@ -26,6 +28,10 @@ Script modifies the following uORB topics to anonymize the GPS Latitude / Longit
 * sensor_gps
 
 > **Note**, altitude data is not modified!
+
+The anonymization is done by calculating an offset to place the initial arming position (home position) to the user specified lat/lon value, and applying that offset throughout the whole uLog.
+
+So the vehicle will appear to take-off / arm from the fixed arbitrary location, regardless of the actual global position it had after going through anonimization.
 
 ### Anonymized information
 It also adds a new [Information message](https://docs.px4.io/main/en/dev_log/ulog_file_format.html#i-information-message) key-value pair into the uLog:
