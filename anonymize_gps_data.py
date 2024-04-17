@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
-from numpy import integer
-
+import numpy as np
 from pyulog import ULog
 
 '''
@@ -9,38 +8,42 @@ Processes given ulog file and saves the new ulog in the output_dir specified
 Output file name will be : "<ulog-file-name>_anonymized.ulg"
 '''
 
-# <<USER SETTING>>
-# GPS coordinates will be shifted so that initial arming point (home-position)
-# will equal to this latitude / longitude point
-GPS_ANONYMIZE_LAT = 0
-GPS_ANONYMIZE_LON = 0
+# [deg] GPS Lat / Lon Anonymize addition values (pseudo-random)
+GPS_ANONYMIZE_LAT = np.random.uniform(-90, 90)
+GPS_ANONYMIZE_LON = np.random.uniform(-180, 180)
 
 # ------------------------------------------------------------------- #
 # GLOBAL FLAG
 verbose = False
 
-# This flag will be set to True once we find a valid GPS data, then the
-# Necessary GPS offset value will be calculated
-FOUND_FIRST_GPS_DATA = False
-GPS_ANONYMIZE_LAT_OFFSET = 0.
-GPS_ANONYMIZE_LON_OFFSET = 0.
+if verbose:
+    print('Anonymize GPS Offset Lat / Lon :', GPS_ANONYMIZE_LAT, GPS_ANONYMIZE_LON)
 
 """
 Return single pair of anonymized GPS location (lat, lon) in degrees
 """
 def anonymize_gps_lat_lon(lat, lon):
-    global FOUND_FIRST_GPS_DATA, GPS_ANONYMIZE_LAT_OFFSET, GPS_ANONYMIZE_LON_OFFSET
-    global GPS_ANONYMIZE_LAT, GPS_ANONYMIZE_LON
+    global GPS_ANONYMIZE_LAT_OFFSET, GPS_ANONYMIZE_LON_OFFSET
 
-    # Automatically calculate offset with the first data supplied
-    # The offset when added, maps raw data into anonymized data.
-    if not FOUND_FIRST_GPS_DATA:
-        GPS_ANONYMIZE_LAT_OFFSET = GPS_ANONYMIZE_LAT - lat
-        GPS_ANONYMIZE_LON_OFFSET = GPS_ANONYMIZE_LON - lon
-        FOUND_FIRST_GPS_DATA = True
-    
-    return (lat + GPS_ANONYMIZE_LAT_OFFSET, lon + GPS_ANONYMIZE_LON_OFFSET)
+    new_lat = lat + GPS_ANONYMIZE_LAT
+    new_lon = lon + GPS_ANONYMIZE_LON
 
+    # Wrap the angles to be in range lat [-90, 90], lon [-180, 180]
+    if new_lat > 90.0:
+        new_lat -= 180.0
+    elif new_lat < -90.0:
+        new_lat += 180.0
+
+    if new_lon > 180.0:
+        new_lon -= 360.0
+    elif new_lon < -180.0:
+        new_lon += 360.0
+
+    # Data can be either NAN or must be in range
+    assert (new_lat >= -90.0 and new_lat <= 90.0) or np.isnan(new_lat), 'Latitude out of range! {}'.format(new_lat)
+    assert (new_lon >= -180.0 and new_lon <= 180.0) or np.isnan(new_lon), 'Longitude out of range! {}'.format(new_lon)
+
+    return (new_lat, new_lon)
 
 """
 Take in two list of latitudes / longitudes each, and return the anonymized lists in the same foramt.
@@ -57,9 +60,7 @@ def anonymize_gps_lat_lon_list(lat_list: list, lon_list: list):
     new_lon = []
 
     for (lat, lon) in zip(lat_list, lon_list):
-        if verbose: print('Pre lat/lon :', lat, lon)
         lat, lon = anonymize_gps_lat_lon(lat, lon)
-        if verbose: print('Post lat/lon :', lat, lon)
         new_lat.append(lat)
         new_lon.append(lon)
 
@@ -125,6 +126,16 @@ def anonymize_topic_gps(ulog_obj, topic_name, lat_name='lat', lon_name='lon', in
             # Anonymize data
             lat_list, lon_list = anonymize_gps_lat_lon_list(lat_list, lon_list)
 
+            if verbose:
+                print('Lat list:', lat_list)
+                print('Lon list:', lon_list)
+                print('Length:', len(lat_list))
+                field_data = ulog_obj._data_list[topic_idx].field_data
+                for field in field_data:
+                    if field.field_name == lat_name or field.field_name == lon_name:
+                        print('Field {} : {}'.format(field.field_name, field.type_str))
+                        print('Field encoding: {}'.format(ulog_obj._UNPACK_TYPES[field.type_str]))
+            
             # Convert the floating point data back to integer type if the unit is integer
             if integer_unit:
                 lat_list = [int(lat * LAT_LON_INTEGER_MULTIPLIER) for lat in lat_list]
@@ -132,9 +143,12 @@ def anonymize_topic_gps(ulog_obj, topic_name, lat_name='lat', lon_name='lon', in
 
             ulog_obj._data_list[topic_idx].data[lat_name] = lat_list
             ulog_obj._data_list[topic_idx].data[lon_name] = lon_list
+            
             print('{} instance {} anonymized!'.format(topic_name, multi_idx))
-        except:
+
+        except Exception as error:
             print('Error while modifying {} instance {}!'.format(topic_name, multi_idx))
+            print(error)
             return
         
         multi_idx += 1
@@ -163,16 +177,16 @@ def anonymize_ulog_gps(ulog_file : Path, output_dir : Path):
     ## Add the Information message with the 'postprocessing.anonymized' flag
     print('Adding anonymized information message ...')
     ANONYMIZED_INFORMATION_KEY = 'postprocessing.anonymized'
-    ANONYMIZED_INFORMATION_VALUE = '1'
+    ANONYMIZED_INFORMATION_VALUE = True
     ANONYMIZED_INFORMATION_UNIT_TYPE = 'bool'
     ulog._msg_info_dict[ANONYMIZED_INFORMATION_KEY] = ANONYMIZED_INFORMATION_VALUE
     ulog._msg_info_dict_types[ANONYMIZED_INFORMATION_KEY] = ANONYMIZED_INFORMATION_UNIT_TYPE
 
     print('Writing anonymized ULog ...')
-    output_file_name = ulog_file.name + '_anonymized' + ulog_file.suffix
+    output_file_name = ulog_file.name[:-len(ulog_file.suffix)] + '_anonymized' + ulog_file.suffix
     ulog.write_ulog(Path.joinpath(output_dir, output_file_name))
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description='Anonymize the GPS location in the ULog')
     parser.add_argument('-o', '--output_dir', dest='output_dir', help='Output directory you want the modified ulog to be stored')
     parser.add_argument('-v', '--verbose', dest='verbose')

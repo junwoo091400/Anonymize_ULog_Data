@@ -29,14 +29,14 @@ Script modifies the following uORB topics to anonymize the GPS Latitude / Longit
 
 > **Note**, altitude data is not modified!
 
-The anonymization is done by calculating an offset to place the initial arming position (home position) to the user specified lat/lon value, and applying that offset throughout the whole uLog.
+The anonymization is done by adding a pseudo-random latitude/longitude offset.
 
 So the vehicle will appear to take-off / arm from the fixed arbitrary location, regardless of the actual global position it had after going through anonimization.
 
 ### Anonymized information
 It also adds a new [Information message](https://docs.px4.io/main/en/dev_log/ulog_file_format.html#i-information-message) key-value pair into the uLog:
 
-`"postprocessing.anonymized" : "1"`
+`"postprocessing.anonymized" : 1 (True)`
 
 ## How to use the script
 ### Clone the repository
@@ -75,6 +75,11 @@ anonymize_gps_data.py: error: the following arguments are required: ulog_path
 ```
 
 ## Additional Context
+### Pyulog bug on exporting `transponder_report` topic
+It seems like for logs with [`transponder_report`](https://github.com/PX4/PX4-Autopilot/commits/e211e0ca0e565b6ff02615ee912fd101e3d2036a/msg/transponder_report.msg) topic, the pyulog breaks down when trying to export the file.
+
+This has been addressed in a [PR](https://github.com/PX4/pyulog/pull/95), but the log export may fail with the message "struct.error: char format requires a bytes object of length 1".
+
 ### Magnetometer data
 The magnetometer data (e.g. `vehicle_magnetometer`) can give an information about an approximate location of the vehicle using the declination information.
 
